@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+asyncpg
+asyncio
+ariadne
+ariadne-graphql-modules
+python-dotenv
+numpy
+pandas
+valkey
+psycopg2-binary

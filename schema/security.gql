@@ -1,0 +1,96 @@
+"""
+ @copyright Copyright (C) 2024 Dennis Greguhn <dev@greguhn.de>
+ 
+ @author Dennis Greguhn <dev@greguhn.de>
+ 
+ @license AGPL-3.0-or-later
+ 
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Affero General Public License as
+ published by the Free Software Foundation, either version 3 of the
+ License, or (at your option) any later version.
+ 
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Affero General Public License for more details.
+ 
+ You should have received a copy of the GNU Affero General Public License
+ along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
+
+type Security {
+	id: Int!
+	last_update: Datetime!
+	code: String!
+	type: SecurityType!
+	name: String!
+	exchange: Exchange!
+	exchange_code: String!
+	currency: Currency!
+	country: Country!
+	figi: String
+	isin: String
+	lei: String
+	wkn: String
+	cusip: String
+	cik: String
+	tws_con_id: Int
+	ipo_date: Date
+	is_delisted: Boolean
+	delisting_date: Date
+	description: String
+	marketcap: BigInt
+	beta: Decimal
+	shares_outstanding: BigInt
+	shares_float: BigInt
+	shares_short: BigInt
+	short_ratio: Decimal
+	short_percent_outstanding: Decimal
+	short_percent_float: Decimal
+	has_options: Boolean!
+	url: String
+	gics_code: GICSCode
+	sector: String
+	industry: String
+	logo_url: String
+	logo_base64: String
+	ebitda: BigInt
+	pe_ratio: Decimal
+	peg_ratio: Int
+	wallstreet_target_price: Decimal
+	book_value: Decimal
+	dividend_share: Decimal
+	dividend_yield: Decimal
+	earnings_share: Decimal
+	eps_estimate_current_year: Decimal
+	eps_estimate_next_year: Decimal
+	eps_estimate_next_quarter: Decimal
+	eps_estimate_current_quarter: Decimal
+	most_recent_quarter: Date
+	profit_margin: Decimal
+	operating_margin_ttm: Decimal
+	return_on_assets_ttm: Decimal
+	return_on_equity_ttm: Decimal
+	revenue_ttm: BigInt
+	revenue_per_share_ttm: Decimal
+	quarterly_revenue_growth_yoy: Decimal
+	gross_profit_ttm: BigInt
+	diluted_eps_ttm: Decimal
+	quarterly_earnings_growth_yoy: Decimal
+	forward_pe: Decimal
+	price_sales_ttm: Decimal
+	price_book_mrq: Decimal
+	enterprise_value: BigInt
+	enterprise_value_revenue: Decimal
+	enterprise_value_ebitda: Decimal
+
+	etf_data: ETFData
+	quotes(start:Date, end:Date): [SecurityQuote]!
+	last_quote: SecurityQuote
+	splits: [Split]!
+	dividends: [Dividend]!
+	analyst_ratings: [AnalystRating]!
+	indicators: JSON
+	outstanding_shares: [OutstandingShares]!
+}

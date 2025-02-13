@@ -1,0 +1,232 @@
+"""
+ @copyright Copyright (C) 2024 Dennis Greguhn <dev@greguhn.de>
+ 
+ @author Dennis Greguhn <dev@greguhn.de>
+ 
+ @license AGPL-3.0-or-later
+ 
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Affero General Public License as
+ published by the Free Software Foundation, either version 3 of the
+ License, or (at your option) any later version.
+ 
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Affero General Public License for more details.
+ 
+ You should have received a copy of the GNU Affero General Public License
+ along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
+
+scalar BigInt
+scalar Date
+scalar Decimal
+scalar JSON
+scalar Time
+scalar Datetime
+
+enum SecurityType {
+	Stock
+	ETF
+}
+
+enum DividendPeriod {
+	Weekly
+	Monthly
+	SemiAnnual
+	Quarterly
+	Annual
+	Other
+}
+
+type SecurityCodeExchange {
+	code: String!
+	exchange_code: String!
+}
+
+type SecurityId {
+	id: Int!
+}
+
+# Unions are not supported as input types right now
+union SecurityMatcher = SecurityCodeExchange | SecurityId
+
+type UpdateResult {
+	success: Boolean!
+	error: String
+}
+
+input SecurityInput {
+	code: String!
+	type: SecurityType
+	name: String
+
+	exchange_code: String!
+	currency_iso_code: String
+	country_alpha3: String
+
+	last_update: Datetime!
+
+	figi: String
+	isin: String
+	lei: String
+	wkn: String
+	cusip: String
+	cik: String
+	tws_con_id: BigInt
+
+	ipo_date: Date
+	is_delisted: Boolean
+	delisting_date: Date
+	description: String
+	marketcap: BigInt
+	beta: Decimal
+	shares_outstanding: BigInt
+	shares_float: BigInt
+	shares_short: BigInt
+	short_ratio: Decimal
+	short_percent_outstanding: Decimal
+	short_percent_float: Decimal
+	
+	has_options: Boolean
+	url: String
+	gics_code: Int
+	sector: String
+	industry: String
+	logo_url: String
+	logo_base64: String
+
+	ebitda: BigInt
+	pe_ratio: Decimal
+	wallstreet_target_price: Decimal
+	book_value: Decimal
+	dividend_share: Decimal
+	dividend_yield: Decimal
+	earnings_share: Decimal
+	eps_estimate_current_year: Decimal
+	eps_estimate_next_year: Decimal
+	eps_estimate_next_quarter: Decimal
+	eps_estimate_current_quarter: Decimal
+	most_recent_quarter: Date
+	profit_margin: Decimal
+	operating_margin_ttm: Decimal
+	return_on_assets_ttm: Decimal
+	return_on_equity_ttm: Decimal
+	revenue_ttm: BigInt
+	revenue_per_share_ttm: Decimal
+	quarterly_revenue_growth_yoy: Decimal
+	gross_profit_ttm: BigInt
+	diluted_eps_ttm: Decimal
+	quarterly_earnings_growth_yoy: Decimal
+	forward_pe: Decimal
+	price_sales_ttm: Decimal
+	price_book_mrq: Decimal
+	enterprise_value: BigInt
+	enterprise_value_revenue: Decimal
+	enterprise_value_ebitda: Decimal
+}
+
+input SecurityQuoteData {
+	date: Date!
+	open: Decimal
+	high: Decimal
+	low: Decimal
+	close: Decimal
+	split_adjusted_open: Decimal
+	split_adjusted_high: Decimal
+	split_adjusted_low: Decimal
+	split_adjusted_close: Decimal
+	adjusted_close: Decimal
+	volume: Decimal
+}
+
+input SecurityQuotesInput {
+	code: String!
+	exchange_code: String!
+
+	quotes: [SecurityQuoteData]!
+}
+
+input SplitData {
+	date: Date!
+	old: Decimal
+	new: Decimal
+}
+
+input SplitsInput {
+	code: String!
+	exchange_code: String!
+
+	splits: [SplitData]!
+}
+
+input DividendData {
+	date: Date!
+	declaration_date: Date
+	record_date: Date
+	payment_date: Date
+	period: DividendPeriod
+	adjusted_value: Decimal
+	value: Decimal
+}
+
+input DividendsInput {
+	code: String!
+	exchange_code: String!
+
+	dividends: [DividendData]!
+}
+
+input AnalystRatingsData {
+	date_added: Date
+	rating: Decimal
+	target_price: Decimal
+	strong_buy: Int
+	buy: Int
+	hold: Int
+	sell: Int
+	strong_sell: Int
+}
+
+input AnalystRatingsInput {
+	code: String!
+	exchange_code: String!
+
+	analyst_ratings: [AnalystRatingsData]!
+}
+
+input InsiderTransactionsData {
+	date: Date!
+	report_date: Date
+	owner_cik: String
+	owner_name: String!
+	owner_relationship: String
+	owner_title: String
+	transaction_date: Date!
+	transaction_code: String!
+	transaction_amount: BigInt!
+	transaction_price: Decimal!
+	transaction_acquired_disposed: String
+	post_transaction_amount: BigInt
+	sec_link: String
+}
+
+input InsiderTransactionsInput {
+	code: String!
+	exchange_code: String!
+
+	insider_transactions: [InsiderTransactionsData]!
+}
+
+input OutstandingShareData {
+	date: Date!
+	outstanding_shares: BigInt
+}
+
+input OutstandingSharesInput {
+	code: String!
+	exchange_code: String!
+
+	outstanding_shares: [OutstandingShareData]!
+}

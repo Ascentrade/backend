@@ -1,0 +1,167 @@
+{
+	"securities":[
+		{
+			"indicator": "SimpleMovingAverage",
+			"parameters": {
+				"period": "9"
+			},
+			"interval": "d",
+			"mapping": {
+				"sma": "sma9_d",
+				"rising": "sma9_rising_d"
+			}
+		},
+		{
+			"indicator": "SimpleMovingAverage",
+			"parameters": {
+				"period": "20"
+			},
+			"interval": "d",
+			"mapping": {
+				"sma": "sma20_d",
+				"rising": "sma20_rising_d"
+			}
+		},
+		{
+			"indicator": "BollingerBands",
+			"parameters": {
+				"period": "20",
+				"std": 2
+			},
+			"interval": "d",
+			"mapping": {
+				"bb_pc": "bb_pc_d"
+			}
+		},
+		{
+			"indicator": "BollingerBands",
+			"parameters": {
+				"period": "20",
+				"std": 2
+			},
+			"interval": "w",
+			"mapping": {
+				"bb_pc": "bb_pc_w"
+			}
+		},
+		{
+			"indicator": "BollingerBands",
+			"parameters": {
+				"period": "20",
+				"std": 2
+			},
+			"interval": "m",
+			"mapping": {
+				"bb_pc": "bb_pc_m"
+			}
+		},
+		{
+			"indicator": "ADXDMI",
+			"parameters": {
+				"period": "14"
+			},
+			"interval": "d",
+			"mapping": {
+				"adx": "adx_d",
+				"dmi_bull": "dmi_bull_d",
+				"adx_crossing_date": "adx_crossing_date_d"
+			}
+		},
+		{
+			"indicator": "Slope",
+			"parameters": {
+				"source": "adx_d"
+			},
+			"interval": "d",
+			"mapping": {
+				"slope": "adx_slope_d"
+			}
+		},
+		{
+			"indicator": "ADXDMI",
+			"parameters": {
+				"period": "14"
+			},
+			"interval": "w",
+			"mapping": {
+				"adx": "adx_w",
+				"dmi_bull": "dmi_bull_w",
+				"adx_crossing_date": "adx_crossing_date_w"
+			}
+		},
+		{
+			"indicator": "Slope",
+			"parameters": {
+				"source": "adx_w"
+			},
+			"interval": "w",
+			"mapping": {
+				"slope": "adx_slope_w"
+			}
+		},
+		{
+			"indicator": "ADXDMI",
+			"parameters": {
+				"period": "14"
+			},
+			"interval": "m",
+			"mapping": {
+				"adx": "adx_m",
+				"dmi_bull": "dmi_bull_m",
+				"adx_crossing_date": "adx_crossing_date_m"
+			}
+		},
+		{
+			"indicator": "Slope",
+			"parameters": {
+				"source": "adx_m"
+			},
+			"interval": "m",
+			"mapping": {
+				"slope": "adx_slope_m"
+			}
+		},
+		{
+			"indicator": "PSAR",
+			"parameters": {
+			},
+			"interval": "d",
+			"mapping": {
+				"psar_bull": "psar_bull_d",
+				"psar_change_date": "psar_change_date_d"
+			}
+		},
+		{
+			"indicator": "PSAR",
+			"parameters": {
+			},
+			"interval": "w",
+			"mapping": {
+				"psar_bull": "psar_bull_w",
+				"psar_change_date": "psar_change_date_w"
+			}
+		},
+		{
+			"indicator": "PSAR",
+			"parameters": {
+			},
+			"interval": "m",
+			"mapping": {
+				"psar_bull": "psar_bull_m",
+				"psar_change_date": "psar_change_date_m"
+			}
+		},
+		{
+			"indicator": "SimpleMovingAverage",
+			"parameters": {
+				"period": "5",
+				"source": "volume"
+			},
+			"interval": "d",
+			"mapping": {
+				"sma": "volume_sma",
+				"rising": "volume_sma_slope"
+			}
+		}
+	]
+}
