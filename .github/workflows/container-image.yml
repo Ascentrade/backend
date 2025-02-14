@@ -9,7 +9,7 @@ on:
     branches: [ "main" ]
 
 env:
-  IMAGE_NAME: database
+  IMAGE_NAME: backend
 
 jobs:
   push:
