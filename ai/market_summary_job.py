@@ -263,8 +263,8 @@ async def build_market_summary(
 		if notifier is not None:
 			await notifier.send_market_summary(
 				summary=decision.summary,
-				score=float(decision.score),
-				confidence=float(decision.confidence),
+				score=decision.score,
+				confidence=decision.confidence,
 			)
 		else:
 			logger.info("Telegram notification skipped: bot token or chat id not configured")
