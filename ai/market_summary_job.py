@@ -2,8 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import datetime as dt
-import importlib.util
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -18,8 +16,13 @@ from ai.service import AIService
 from db.models import AiResponseModel, HistoricalDataModel
 from db.session import AsyncSessionLocal
 from logging_config import get_logger
+from telegram_notifier import market_summary_notifier_from_env
 from utils import (
+	_last_starts_falling_date,
+	_last_starts_rising_date,
+	_last_cross_date_level,
 	_last_cross_event,
+	_only_latest_date_among,
 	_safe_pct_distance,
 	coerce_ohlcv,
 	event_to_dates,
@@ -27,16 +30,6 @@ from utils import (
 )
 
 logger = get_logger(__name__)
-
-
-def _load_telegram_notifier_class():
-	module_path = Path(__file__).resolve().parent.parent / "telegram" / "notifier.py"
-	spec = importlib.util.spec_from_file_location("market_telegram_notifier", module_path)
-	if spec is None or spec.loader is None:
-		raise RuntimeError(f"Could not load Telegram notifier module from {module_path}")
-	module = importlib.util.module_from_spec(spec)
-	spec.loader.exec_module(module)
-	return module.TelegramNotifier
 
 
 def _build_market_state() -> tuple[dict, pd.DataFrame]:
@@ -123,6 +116,10 @@ def _build_market_state() -> tuple[dict, pd.DataFrame]:
 	ema20_slope = float(np.polyfit(x, state_df["ema20"].iloc[-slope_window:].to_numpy(dtype=float), 1)[0])
 	sma50_slope = float(np.polyfit(x, state_df["sma50"].iloc[-slope_window:].to_numpy(dtype=float), 1)[0])
 	sma200_slope = float(np.polyfit(x, state_df["sma200"].iloc[-slope_window:].to_numpy(dtype=float), 1)[0])
+	adx_slope = float(np.polyfit(x, state_df["adx"].iloc[-slope_window:].to_numpy(dtype=float), 1)[0])
+	dmip_slope = float(np.polyfit(x, state_df["dmip"].iloc[-slope_window:].to_numpy(dtype=float), 1)[0])
+	dmim_slope = float(np.polyfit(x, state_df["dmim"].iloc[-slope_window:].to_numpy(dtype=float), 1)[0])
+	rsi_slope = float(np.polyfit(x, state_df["rsi"].iloc[-slope_window:].to_numpy(dtype=float), 1)[0])
 
 	today_change_percent = _safe_pct_distance(price, price_prev)
 
@@ -139,13 +136,58 @@ def _build_market_state() -> tuple[dict, pd.DataFrame]:
 	ema20_sma200_above, ema20_sma200_below = event_to_dates(_last_cross_event(index_values, ema20_values, sma200_values))
 	sma50_sma200_above, sma50_sma200_below = event_to_dates(_last_cross_event(index_values, sma50_values, sma200_values))
 
+	rsi_values = state_df["rsi"].to_numpy(dtype=float)
+	adx_values = state_df["adx"].to_numpy(dtype=float)
+	rsi_level_dates = _only_latest_date_among(
+		{
+			"rsi_crossed_below_30": _last_cross_date_level(index_values, rsi_values, 30.0, "below"),
+			"rsi_crossed_above_30": _last_cross_date_level(index_values, rsi_values, 30.0, "above"),
+			"rsi_crossed_above_70": _last_cross_date_level(index_values, rsi_values, 70.0, "above"),
+			"rsi_crossed_below_70": _last_cross_date_level(index_values, rsi_values, 70.0, "below"),
+		}
+	)
+	adx_trend_dates = _only_latest_date_among(
+		{
+			"adx_started_rising": _last_starts_rising_date(index_values, adx_values),
+			"adx_started_falling": _last_starts_falling_date(index_values, adx_values),
+		}
+	)
+
+	adx_latest = latest["adx"]
+	dmip_latest = latest["dmip"]
+	dmim_latest = latest["dmim"]
+	rsi_latest = latest["rsi"]
+	adx_prev = prev["adx"]
+	rsi_prev = prev["rsi"]
+
 	spx_state = {
 		"symbol": "SPX",
 		"timestamp": str(latest.name),
-		"close": price,
+		"open": latest["open"],
+		"high": latest["high"],
+		"low": latest["low"],
+		"close": latest["close"],
 		"ema20": ema20_v,
 		"sma50": sma50_v,
 		"sma200": sma200_v,
+		"rsi": None if pd.isna(rsi_latest) else float(rsi_latest),
+		"rsi_slope": rsi_slope,
+		"rsi_change": None
+		if pd.isna(rsi_latest) or pd.isna(rsi_prev)
+		else float(rsi_latest) - float(rsi_prev),
+		"rsi_crossed_below_30": rsi_level_dates["rsi_crossed_below_30"],
+		"rsi_crossed_above_30": rsi_level_dates["rsi_crossed_above_30"],
+		"rsi_crossed_above_70": rsi_level_dates["rsi_crossed_above_70"],
+		"rsi_crossed_below_70": rsi_level_dates["rsi_crossed_below_70"],
+		"adx": None if pd.isna(adx_latest) else float(adx_latest),
+		"dmip": None if pd.isna(dmip_latest) else float(dmip_latest),
+		"dmim": None if pd.isna(dmim_latest) else float(dmim_latest),
+		"adx_slope": adx_slope,
+		"dmip_slope": dmip_slope,
+		"dmim_slope": dmim_slope,
+		"adx_change": None if pd.isna(adx_latest) or pd.isna(adx_prev) else float(adx_latest) - float(adx_prev),
+		"adx_started_rising": adx_trend_dates["adx_started_rising"],
+		"adx_started_falling": adx_trend_dates["adx_started_falling"],
 		"ema20_slope": ema20_slope,
 		"sma50_slope": sma50_slope,
 		"sma200_slope": sma200_slope,
@@ -196,22 +238,28 @@ def _build_market_state() -> tuple[dict, pd.DataFrame]:
 
 
 async def run_market_summary_job_once() -> None:
-	await build_market_summary(persist_to_db=True)
+	await build_market_summary(persist_to_db=True, send_telegram_notifications=True)
 
 
-async def build_market_summary(persist_to_db: bool = True) -> tuple[dict, dict]:
+async def build_market_summary(
+	persist_to_db: bool = True,
+	send_telegram_notifications: bool = False,
+) -> tuple[dict, dict]:
 	"""
 	Shared pipeline used by both the app scheduler and test script.
 	Returns market_state and AI decision dict.
 	"""
-	logger.info("Building market summary (persist_to_db=%s)", persist_to_db)
+	logger.info(
+		"Building market summary (persist_to_db=%s, send_telegram=%s)",
+		persist_to_db,
+		send_telegram_notifications,
+	)
 	market_state, historical_df = _build_market_state()
 	ai = AIService()
 	decision = await ai.evaluate_market_state(market_state)
 
-	try:
-		TelegramNotifier = _load_telegram_notifier_class()
-		notifier = TelegramNotifier.from_env()
+	if send_telegram_notifications:
+		notifier = market_summary_notifier_from_env()
 		if notifier is not None:
 			await notifier.send_market_summary(
 				summary=decision.summary,
@@ -220,8 +268,6 @@ async def build_market_summary(persist_to_db: bool = True) -> tuple[dict, dict]:
 			)
 		else:
 			logger.info("Telegram notification skipped: bot token or chat id not configured")
-	except Exception as exc:
-		logger.exception("Failed to send Telegram market summary notification: %s", exc)
 
 	if persist_to_db:
 		async with AsyncSessionLocal() as session:

@@ -55,7 +55,7 @@ class TelegramNotifier:
 			f"--------------------------------\n"
 			f"{summary}\n"
 			f"--------------------------------\n"
-			f"{delta_icon} {delta_text} ({conf_pct:.0f}%)\n"
+			f"{delta_icon} {delta_text} {score}/100 ({conf_pct:.0f}% confidence)\n"
 			f"--------------------------------\n"
 			f"-> More on https://ascentrade.app"
 		)

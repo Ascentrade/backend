@@ -178,3 +178,69 @@ def _last_cross_event(
 
 	return last_kind, str(last_date)
 
+
+def _last_cross_date_level(index: Any, values: Any, level: float, kind: str) -> str | None:
+	"""Last date `values` crossed above or below a constant horizontal `level`."""
+	import math
+
+	last_date = None
+	for i in range(1, len(values)):
+		prev_a = float(values[i - 1])
+		curr_a = float(values[i])
+		if math.isnan(prev_a) or math.isnan(curr_a):
+			continue
+		if kind == "above":
+			crossed = _crossed_above(prev_a, level, curr_a, level)
+		elif kind == "below":
+			crossed = _crossed_below(prev_a, level, curr_a, level)
+		else:
+			raise ValueError("kind must be 'above' or 'below'")
+		if crossed:
+			last_date = index[i]
+	return str(last_date) if last_date is not None else None
+
+
+def _last_starts_rising_date(index: Any, values: Any) -> str | None:
+	"""Most recent bar where `values` pivots from flat/down into rising (trough at i-1)."""
+	import math
+
+	last_date = None
+	for i in range(2, len(values)):
+		p0 = float(values[i - 2])
+		p1 = float(values[i - 1])
+		p2 = float(values[i])
+		if math.isnan(p0) or math.isnan(p1) or math.isnan(p2):
+			continue
+		if p1 <= p0 and p2 > p1:
+			last_date = index[i]
+	return str(last_date) if last_date is not None else None
+
+
+def _last_starts_falling_date(index: Any, values: Any) -> str | None:
+	"""Most recent bar where `values` pivots from flat/up into falling (peak at i-1)."""
+	import math
+
+	last_date = None
+	for i in range(2, len(values)):
+		p0 = float(values[i - 2])
+		p1 = float(values[i - 1])
+		p2 = float(values[i])
+		if math.isnan(p0) or math.isnan(p1) or math.isnan(p2):
+			continue
+		if p1 >= p0 and p2 < p1:
+			last_date = index[i]
+	return str(last_date) if last_date is not None else None
+
+
+def _only_latest_date_among(dates_by_key: dict[str, str | None]) -> dict[str, str | None]:
+	"""Keep only the chronologically latest non-null date; set all other keys to None."""
+	import pandas as pd
+
+	out = {k: None for k in dates_by_key}
+	present = {k: v for k, v in dates_by_key.items() if v is not None}
+	if not present:
+		return out
+	winner = max(present, key=lambda k: pd.Timestamp(present[k]))
+	out[winner] = present[winner]
+	return out
+
