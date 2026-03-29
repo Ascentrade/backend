@@ -70,6 +70,30 @@ You will receive:
 - Falling VIX with weak price = potential bearish continuation (complacency risk)
 - Large negative slope in short-term averages = momentum pressure
 
+### CBOE PUT/CALL RATIO INTERPRETATION
+
+The Total Put/Call Ratio reflects overall market positioning and acts as a broad sentiment gauge. Values near 1.0 indicate neutral sentiment.
+Levels below ~0.70 signal bullish complacency/risk-on behavior,while levels above ~1.00 indicate increasing bearish hedging, and >1.20–1.30 suggest fear or potential capitulation.
+Turning points occur when the ratio spikes to extremes and reverses, often marking contrarian inflection points.
+
+The Index Put/Call Ratio represents institutional positioning. Values below ~0.80 indicate low hedging and confidence, 0.80–1.10 is neutral,
+and >1.10 reflects increasing caution. Elevated levels above ~1.30–1.50 indicate heavy downside protection and stress,
+which can act as a contrarian bullish signal. Key signals come from sharp spikes (capitulation/hedge saturation) and subsequent declines (bullish unwind of hedges).
+
+The Equity Put/Call Ratio captures retail/speculative sentiment. Values below ~0.55–0.60 indicate strong call buying and bullish risk appetite (potential complacency), 0.60–0.90 is neutral,
+and >0.90–1.00 reflects defensive positioning. Levels above ~1.10 suggest fear or capitulation.
+Extremely low readings act as contrarian bearish signals, while sharp upward spikes often mark panic-driven bottoms.
+
+The VIX Put/Call Ratio reflects volatility expectations. Values below ~0.80–0.90 indicate demand for VIX calls (hedging against volatility spikes), ~1.00 is neutral,
+and >1.10–1.20 suggests expectations of stable or declining volatility. Very low levels can indicate crowded hedging and precede volatility peaks,
+while rising values from low levels signal easing volatility expectations (supportive for equities).
+
+Overall Interpretation:
+Evaluate both absolute levels and rate of change across all ratios. Extremes function as contrarian signals, while shifts in direction (spikes and reversals) are more important than static readings.
+Cross-ratio divergences provide the strongest signal: high Index Put/Call with low Equity Put/Call indicates institutional hedging versus retail optimism,
+often resulting in short-term market support but increased fragility. Broadly elevated ratios across Total, Index, and Equity suggest fear/capitulation and potential bullish reversal,
+while broadly suppressed ratios indicate complacency and elevated downside risk.
+
 ---
 
 ### OUTPUT FORMAT (STRICT JSON ONLY)

@@ -12,6 +12,7 @@ from ta.trend import ADXIndicator, EMAIndicator, SMAIndicator
 from ta.volatility import BollingerBands
 
 import fear_and_greed
+from put_call_ratios import get_put_call_ratios
 
 from ai.prompts import SYSTEM_PROMPT
 from ai.service import AIService
@@ -35,9 +36,8 @@ logger = get_logger(__name__)
 
 
 def _build_market_state() -> tuple[dict, pd.DataFrame]:
-	symbols_to_download = ["^GSPC", "^VVIX", "^VIX", "^VIX3M"]
-	df = yf.download(
-		symbols_to_download,
+	spx_raw = yf.download(
+		"^GSPC",
 		period="3y",
 		interval="1d",
 		progress=False,
@@ -45,14 +45,26 @@ def _build_market_state() -> tuple[dict, pd.DataFrame]:
 		auto_adjust=True,
 		actions=False,
 	)
+	if spx_raw is None or spx_raw.empty:
+		raise RuntimeError("No data returned from yfinance for ^GSPC")
+	spx_df = coerce_ohlcv(
+		spx_raw["^GSPC"] if isinstance(spx_raw.columns, pd.MultiIndex) else spx_raw
+	)
 
-	if df is None or df.empty:
-		raise RuntimeError("No data returned from yfinance")
-
-	spx_df = coerce_ohlcv(df["^GSPC"])
-	vix_df = coerce_ohlcv(df["^VIX"])
-	vix3m_df = coerce_ohlcv(df["^VIX3M"])
-	vvix_df = coerce_ohlcv(df["^VVIX"])
+	vol_raw = yf.download(
+		["^VVIX", "^VIX", "^VIX3M"],
+		period="1mo",
+		interval="1d",
+		progress=False,
+		group_by="ticker",
+		auto_adjust=True,
+		actions=False,
+	)
+	if vol_raw is None or vol_raw.empty:
+		raise RuntimeError("No data returned from yfinance for volatility indices")
+	vix_df = coerce_ohlcv(vol_raw["^VIX"])
+	vix3m_df = coerce_ohlcv(vol_raw["^VIX3M"])
+	vvix_df = coerce_ohlcv(vol_raw["^VVIX"])
 
 	close_s = spx_df["Close"].astype(float)
 	high_s = spx_df["High"].astype(float)
@@ -249,10 +261,14 @@ def _build_market_state() -> tuple[dict, pd.DataFrame]:
 		logger.error("Error getting Fear and Greed Index: %s", e)
 		fear_and_greed_index = None
 
+	pcr = get_put_call_ratios(pd.Timestamp(latest.name).date())
+	put_call_ratios = pcr.market_state_entries() if pcr else None
+
 	return {
 		"SPX": spx_state,
 		"VIX": vix_state,
 		"Fear and Greed Index": fear_and_greed_index,
+		"Put/Call Ratios": put_call_ratios,
 	}, historical_df
 
 
