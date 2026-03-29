@@ -1,6 +1,8 @@
 from __future__ import annotations
 from typing import Any
 import os
+import math
+import pandas as pd
 
 
 def get_bool_env(key: str, default: bool = False) -> bool:
@@ -36,8 +38,6 @@ def _safe_pct_distance(price: float, ma: float) -> float:
 
 
 def coerce_ohlcv(d):
-	import pandas as pd
-
 	out = d.copy()
 	for col in ("Open", "High", "Low", "Close", "Adj Close", "Volume"):
 		if col in out.columns:
@@ -181,7 +181,6 @@ def _last_cross_event(
 
 def _last_cross_date_level(index: Any, values: Any, level: float, kind: str) -> str | None:
 	"""Last date `values` crossed above or below a constant horizontal `level`."""
-	import math
 
 	last_date = None
 	for i in range(1, len(values)):
@@ -202,7 +201,6 @@ def _last_cross_date_level(index: Any, values: Any, level: float, kind: str) -> 
 
 def _last_starts_rising_date(index: Any, values: Any) -> str | None:
 	"""Most recent bar where `values` pivots from flat/down into rising (trough at i-1)."""
-	import math
 
 	last_date = None
 	for i in range(2, len(values)):
@@ -218,7 +216,6 @@ def _last_starts_rising_date(index: Any, values: Any) -> str | None:
 
 def _last_starts_falling_date(index: Any, values: Any) -> str | None:
 	"""Most recent bar where `values` pivots from flat/up into falling (peak at i-1)."""
-	import math
 
 	last_date = None
 	for i in range(2, len(values)):
@@ -234,7 +231,6 @@ def _last_starts_falling_date(index: Any, values: Any) -> str | None:
 
 def _only_latest_date_among(dates_by_key: dict[str, str | None]) -> dict[str, str | None]:
 	"""Keep only the chronologically latest non-null date; set all other keys to None."""
-	import pandas as pd
 
 	out = {k: None for k in dates_by_key}
 	present = {k: v for k, v in dates_by_key.items() if v is not None}
