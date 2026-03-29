@@ -11,3 +11,4 @@ asyncpg
 strawberry-graphql[fastapi]
 uvicorn
 python-telegram-bot
+fear-and-greed

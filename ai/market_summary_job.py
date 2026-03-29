@@ -11,6 +11,8 @@ from ta.momentum import RSIIndicator
 from ta.trend import ADXIndicator, EMAIndicator, SMAIndicator
 from ta.volatility import BollingerBands
 
+import fear_and_greed
+
 from ai.prompts import SYSTEM_PROMPT
 from ai.service import AIService
 from db.models import AiResponseModel, HistoricalDataModel
@@ -234,7 +236,24 @@ def _build_market_state() -> tuple[dict, pd.DataFrame]:
 		"vvix_pct_change": _safe_pct_distance(vvix_latest, vvix_prev),
 	}
 
-	return {"SPX": spx_state, "VIX": vix_state}, historical_df
+	# Fear and Greed Index
+	fear_and_greed_index: dict | None = None
+	try:
+		fgi = fear_and_greed.get()
+		fear_and_greed_index = {
+			"value": float(fgi.value),
+			"description": fgi.description,
+			"last_update": fgi.last_update.replace(tzinfo=None).isoformat(),
+		}
+	except Exception as e:
+		logger.error("Error getting Fear and Greed Index: %s", e)
+		fear_and_greed_index = None
+
+	return {
+		"SPX": spx_state,
+		"VIX": vix_state,
+		"Fear and Greed Index": fear_and_greed_index,
+	}, historical_df
 
 
 async def run_market_summary_job_once() -> None:
