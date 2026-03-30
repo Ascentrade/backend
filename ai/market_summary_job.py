@@ -12,7 +12,7 @@ from ta.trend import ADXIndicator, EMAIndicator, SMAIndicator
 from ta.volatility import BollingerBands
 
 import fear_and_greed
-from put_call_ratios import get_put_call_ratios
+from datasources.put_call_ratios import get_put_call_ratios
 
 from ai.prompts import SYSTEM_PROMPT
 from ai.service import AIService
