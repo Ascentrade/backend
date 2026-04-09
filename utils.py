@@ -58,14 +58,6 @@ def _safe_pct_distance(price: float, ma: float) -> float:
 	return ((price - ma) / ma) * 100.0
 
 
-def coerce_ohlcv(d):
-	out = d.copy()
-	for col in ("Open", "High", "Low", "Close", "Adj Close", "Volume"):
-		if col in out.columns:
-			out[col] = pd.to_numeric(out[col], errors="coerce")
-	return out
-
-
 def get_latest_and_prev_close(sym_df):
 	if "Adj Close" in sym_df.columns:
 		close_s = sym_df["Adj Close"].astype(float)

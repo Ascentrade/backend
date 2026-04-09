@@ -26,7 +26,6 @@ import datetime as dt
 
 import numpy as np
 import pandas as pd
-import yfinance as yf
 from sqlalchemy import delete
 from ta.momentum import RSIIndicator
 from ta.trend import ADXIndicator, EMAIndicator, SMAIndicator
@@ -34,6 +33,7 @@ from ta.volatility import BollingerBands
 
 import fear_and_greed
 from datasources.put_call_ratios import get_put_call_ratios
+from datasources.yahoo import get_from_yahoo
 
 from ai.prompts import SYSTEM_PROMPT
 from ai.service import AIService
@@ -48,7 +48,6 @@ from utils import (
 	_last_cross_event,
 	_only_latest_date_among,
 	_safe_pct_distance,
-	coerce_ohlcv,
 	event_to_dates,
 	get_latest_and_prev_close,
 )
@@ -57,59 +56,30 @@ logger = get_logger(__name__)
 
 
 def _build_market_state() -> tuple[dict, pd.DataFrame]:
-	spx_raw = yf.download(
-		"^GSPC",
-		period="3y",
-		interval="1d",
-		progress=False,
-		group_by="ticker",
-		auto_adjust=True,
-		actions=False,
-	)
-	if spx_raw is None or spx_raw.empty:
-		raise RuntimeError("No data returned from yfinance for ^GSPC")
-	spx_df = coerce_ohlcv(
-		spx_raw["^GSPC"] if isinstance(spx_raw.columns, pd.MultiIndex) else spx_raw
-	)
+	spx_df = get_from_yahoo("^GSPC", "3y")
+	vvix_df = get_from_yahoo("^VVIX", "1y")
+	vix_df = get_from_yahoo("^VIX", "1y")
+	vix3m_df = get_from_yahoo("^VIX3M", "1y")
 
-	vol_raw = yf.download(
-		["^VVIX", "^VIX", "^VIX3M"],
-		period="1mo",
-		interval="1d",
-		progress=False,
-		group_by="ticker",
-		auto_adjust=True,
-		actions=False,
-	)
-	if vol_raw is None or vol_raw.empty:
-		raise RuntimeError("No data returned from yfinance for volatility indices")
-	vix_df = coerce_ohlcv(vol_raw["^VIX"])
-	vix3m_df = coerce_ohlcv(vol_raw["^VIX3M"])
-	vvix_df = coerce_ohlcv(vol_raw["^VVIX"])
+	ema20 = EMAIndicator(close=spx_df["Close"], window=20, fillna=False).ema_indicator()
+	sma50 = SMAIndicator(close=spx_df["Close"], window=50, fillna=False).sma_indicator()
+	sma200 = SMAIndicator(close=spx_df["Close"], window=200, fillna=False).sma_indicator()
+	rsi = RSIIndicator(close=spx_df["Close"], window=14, fillna=False).rsi()
 
-	close_s = spx_df["Close"].astype(float)
-	high_s = spx_df["High"].astype(float)
-	low_s = spx_df["Low"].astype(float)
-
-	ema20 = EMAIndicator(close=close_s, window=20, fillna=False).ema_indicator()
-	sma50 = SMAIndicator(close=close_s, window=50, fillna=False).sma_indicator()
-	sma200 = SMAIndicator(close=close_s, window=200, fillna=False).sma_indicator()
-	rsi = RSIIndicator(close=close_s, window=14, fillna=False).rsi()
-
-	bb = BollingerBands(close=close_s, window=20, window_dev=2, fillna=False)
+	bb = BollingerBands(close=spx_df["Close"], window=20, window_dev=2, fillna=False)
 	bb_pc = bb.bollinger_pband()
 
-	adx_i = ADXIndicator(high=high_s, low=low_s, close=close_s, window=14, fillna=False)
+	adx_i = ADXIndicator(high=spx_df["High"], low=spx_df["Low"], close=spx_df["Close"], window=14, fillna=False)
 	adx = adx_i.adx()
 	dmip = adx_i.adx_pos()
 	dmim = adx_i.adx_neg()
 
 	indicator_df = pd.DataFrame(
 		{
-			"open": spx_df["Open"].astype(float),
-			"high": high_s,
-			"low": low_s,
-			"close": close_s,
+			"open": spx_df["Open"],
+			"high": spx_df["High"],
+			"low": spx_df["Low"],
+			"close": spx_df["Close"],
 			"volume": spx_df["Volume"].astype(float) if "Volume" in spx_df.columns else np.nan,
 			"ema20": ema20,
 			"sma50": sma50,
@@ -135,12 +105,9 @@ def _build_market_state() -> tuple[dict, pd.DataFrame]:
 	price = float(latest["close"])
 	price_prev = float(prev["close"])
 
-	if "Open" in spx_df.columns:
-		today_open = float(spx_df["Open"].iloc[-1])
-		yesterday_close_for_gap = float(spx_df["Close"].iloc[-2])
-		gap_percent = _safe_pct_distance(today_open, yesterday_close_for_gap)
-	else:
-		gap_percent = None
+	today_open = float(spx_df["Open"].iloc[-1])
+	yesterday_close_for_gap = float(spx_df["Close"].iloc[-2])
+	gap_percent = _safe_pct_distance(today_open, yesterday_close_for_gap)
 
 	ema20_v = float(latest["ema20"])
 	sma50_v = float(latest["sma50"])

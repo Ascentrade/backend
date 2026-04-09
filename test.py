@@ -34,15 +34,19 @@ logger = get_logger(__name__)
 
 
 async def main() -> None:
-	persist_to_db = get_bool_env("PERSIST_MARKET_SUMMARY_TO_DB", False)
-	send_telegram = get_bool_env("SEND_TELEGRAM_NOTIFICATIONS", False)
-	market_state, decision = await build_market_summary(
-		persist_to_db=persist_to_db,
-		send_telegram_notifications=send_telegram,
-	)
-	logger.info("Finished computing market state using shared pipeline")
-	print(json.dumps(market_state, indent=2))
-	print(json.dumps(decision, indent=2))
+	try:
+		persist_to_db = get_bool_env("PERSIST_MARKET_SUMMARY_TO_DB", False)
+		send_telegram = get_bool_env("SEND_TELEGRAM_NOTIFICATIONS", False)
+		market_state, decision = await build_market_summary(
+			persist_to_db=persist_to_db,
+			send_telegram_notifications=send_telegram,
+		)
+		logger.info("Finished computing market state using shared pipeline")
+		print(json.dumps(market_state, indent=2))
+		print(json.dumps(decision, indent=2))
+
+	except Exception as e:
+		logger.exception("Error building market state: %s", e)
 
 
 if __name__ == "__main__":
