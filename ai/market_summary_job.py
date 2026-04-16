@@ -348,7 +348,7 @@ def _seconds_until_next_run(run_times_utc: list[tuple[int, int]]) -> float:
 
 
 async def run_daily_market_summary_scheduler(stop_event: asyncio.Event) -> None:
-	run_times_utc = [(18, 0), (23, 0)]
+	run_times_utc = [(15, 30), (21, 0)]
 
 	while not stop_event.is_set():
 		sleep_seconds = _seconds_until_next_run(run_times_utc)
