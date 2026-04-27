@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import asyncio
 import datetime as dt
+from zoneinfo import ZoneInfo
 
 import numpy as np
 import pandas as pd
@@ -336,22 +337,36 @@ async def build_market_summary(
 	}
 
 
-def _seconds_until_next_run(run_times_utc: list[tuple[int, int]]) -> float:
-	now = dt.datetime.now(dt.timezone.utc)
-	next_runs = [
-		now.replace(hour=hour_utc, minute=minute_utc, second=0, microsecond=0)
-		for hour_utc, minute_utc in run_times_utc
-	]
-	future_runs = [run for run in next_runs if run > now]
-	next_run = min(future_runs) if future_runs else min(next_runs) + dt.timedelta(days=1)
+def _seconds_until_next_run(run_times_local: list[tuple[int, int]], timezone: dt.tzinfo) -> float:
+	now = dt.datetime.now(timezone)
+	next_run: dt.datetime | None = None
+
+	for day_offset in range(8):
+		candidate_day = now + dt.timedelta(days=day_offset)
+		if candidate_day.weekday() >= 5:
+			continue
+
+		runs_for_day = [
+			candidate_day.replace(hour=hour_local, minute=minute_local, second=0, microsecond=0)
+			for hour_local, minute_local in run_times_local
+		]
+		future_runs = [run for run in runs_for_day if run > now]
+		if future_runs:
+			next_run = min(future_runs)
+			break
+
+	if next_run is None:
+		raise RuntimeError("Could not determine next weekday run time")
+
 	return (next_run - now).total_seconds()
 
 
 async def run_daily_market_summary_scheduler(stop_event: asyncio.Event) -> None:
-	run_times_utc = [(15, 30), (21, 0)]
+	new_york_tz = ZoneInfo("America/New_York")
+	run_times_local = [(12, 30), (16, 30)]
 
 	while not stop_event.is_set():
-		sleep_seconds = _seconds_until_next_run(run_times_utc)
+		sleep_seconds = _seconds_until_next_run(run_times_local, new_york_tz)
 		logger.info("Next daily market summary run in %.0f seconds", sleep_seconds)
 
 		try:
